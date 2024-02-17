@@ -4,7 +4,7 @@ import os
 import env
 import random
 
-INT_MAX = 2147483647
+SIGNED_INT_32_BIT_MAX = 2147483647
 
 class RCONClient:
     def __init__(self, host = '127.0.0.1', port = 25575, password = ''):
@@ -31,4 +31,4 @@ class RCONClient:
         raise NotImplementedError
     
     def generate_id(self):
-        return random.randint(0,INT_MAX)
+        return random.randint(0,SIGNED_INT_32_BIT_MAX)
