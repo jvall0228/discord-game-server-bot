@@ -1,0 +1,3 @@
+**/node_modules
+**/palworld-server-watchdog/env.py
+**/palworld-server-watchdog/__pycache__
