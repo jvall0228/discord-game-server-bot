@@ -10,7 +10,7 @@ class RCONClient:
     def __init__(self, host = '127.0.0.1', port = 25575, password = ''):
         self.host = host
         self.port = port
-        self.password = os.getenv('PALWORLD_PASSWORD', password)
+        self.password = os.getenv('PALWORLD_ADMIN_PASSWORD', password)
     
     def command(self, command, args):
         packet = self.build_packet(command, args)
