@@ -79,7 +79,7 @@ class RCONClient:
         self.host = host
         self.port = port
         self.password = password
-    
+
     def command(self, input:str):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(RCONClient.TIMEOUT_INTERVAL)
@@ -135,6 +135,30 @@ class RCONClient:
                     command_response += response
             command_response_packet = RCONPacket.unpack(command_response)
             print(getattr(command_response_packet, 'body'))
+
+    def save(self):
+        return self.command(RCONCommands.SAVE.name)
+    
+    def showPlayers(self):
+        return self.command(RCONCommands.SHOWPLAYERS.name)
+    
+    def info(self):
+        return self.command(RCONCommands.INFO.name)
+    
+    def doExit(self):
+        return self.command(RCONCommands.DOEXIT.name)
+    
+    def banPlayer(self, playerId:str):
+        return self.command(RCONCommands.BANPLAYER.name + ' ' + playerId)
+    
+    def kickPlayer(self, playerId:str):
+        return self.command(RCONCommands.KICKPLAYER.name + ' ' + playerId)
+    
+    def broadcast(self, message:str):
+        return self.command(RCONCommands.BROADCAST.name + ' ' + message)
+    
+    def shutdown(self, time:int, message:str):
+        return self.command(RCONCommands.SHUTDOWN.name + ' ' + time + ' ' + message)
 
     def get_command_body(input:str):
         input = input.lstrip()
