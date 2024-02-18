@@ -45,21 +45,9 @@ class RCONPacket:
             raise Exception('Invalid arguments')
 
         self.body_size = len(self.body) + 1 if self.body is not None else 1
-
-    def getId(self):
-        return self.id
-
-    def getType(self):
-        return self.type
-
-    def getBody(self):
-        return self.body
-    
-    def getBodySize(self):
-        return self.body_size
     
     def getTotalSize(self):
-        RCONPacket.HEADER_SIZE + self.body_size
+        return RCONPacket.HEADER_SIZE + self.body_size
 
     def generate_id():
         return random.randint(0,RCONPacket.SIGNED_INT_32_BIT_MAX)
@@ -111,7 +99,7 @@ class RCONClient:
             
             #Attempt RCON Authentication
             auth_request_packet = RCONPacket(RCONPacketType.SERVER_AUTH_REQUEST, self.password)
-            auth_empty_packet = RCONPacket(auth_request_packet.getId(), RCONPacketType.SERVER_RESPONSE, '')
+            auth_empty_packet = RCONPacket(getattr(auth_request_packet,'id')+1, RCONPacketType.SERVER_RESPONSE, '')
             s.send(auth_request_packet.pack())
             s.send(auth_empty_packet.pack())
 
@@ -120,7 +108,7 @@ class RCONClient:
                 response = s.recv(RCONClient.MAX_PACKET_SIZE)
                 id = struct.unpack('<i', response[4:8])
 
-                if id == auth_empty_packet.getId():
+                if id == getattr(auth_empty_packet,'id'):
                     break
                 else:
                     auth_response += response
@@ -132,7 +120,7 @@ class RCONClient:
             #Send command
             command_body = RCONClient.get_command_body(input)
             command_request_packet = RCONPacket(RCONPacketType.SERVER_COMMAND_REQUEST, command_body)
-            command_empty_packet = RCONPacket(command_request_packet.getId()+1,RCONPacketType.SERVER_RESPONSE, '')
+            command_empty_packet = RCONPacket(getattr(command_request_packet, 'id')+1,RCONPacketType.SERVER_RESPONSE, '')
             s.send(command_request_packet)
             s.send(command_empty_packet)
 
@@ -141,12 +129,12 @@ class RCONClient:
                 response = s.recv(RCONClient.MAX_PACKET_SIZE)
                 id = struct.unpack('<i', response[4:8])
 
-                if id == command_empty_packet.getId():
+                if id == getattr(command_empty_packet, 'id'):
                     break
                 else:
                     command_response += response
             command_response_packet = RCONPacket.unpack(command_response)
-            print(command_response_packet.getBody(0))
+            print(getattr(command_response_packet, 'body'))
 
     def get_command_body(input:str):
         input = input.lstrip()
