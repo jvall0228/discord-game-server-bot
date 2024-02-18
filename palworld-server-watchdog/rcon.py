@@ -150,9 +150,14 @@ class RCONClient:
 
     def get_command_body(input:str):
         input = input.lstrip()
+        
+        if input[0] == '/':
+            input = input[1:]
+
         input_split = input.split(None, 1)
         command = input_split[0].upper()
-        command = RCONCommands(command)
+        
+        command = RCONCommands[command]
         args = input_split[1].split(None, command.value[1]-1) if command.value[1] > 0 else None
 
         body = command.value[0]
