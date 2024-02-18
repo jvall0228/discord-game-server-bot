@@ -1,8 +1,9 @@
 import socket
 import struct
 import os
-import env
 import random
+import time
+
 from enum import Enum
 
 class RCONPacketType(Enum):
@@ -93,6 +94,7 @@ class RCONClient:
                     print('Socket Exception on Connection:{}').format(error)
                     print('Retrying...')
                     retries += 1
+                    time.sleep(RCONClient.WAIT_INTERVAL)
             
             if retries > RCONClient.RETRY_CONNECT:
                 raise Exception('Could not connect to Palworld Server')
