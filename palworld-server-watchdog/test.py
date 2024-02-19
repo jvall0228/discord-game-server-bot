@@ -1,5 +1,6 @@
 from rcon import RCONClient
+import env
 
 client = RCONClient()
 
-client.broadcast('test message ignore')
+client.showPlayers()

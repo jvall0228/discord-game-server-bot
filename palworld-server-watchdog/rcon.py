@@ -76,10 +76,10 @@ class RCONClient:
     TIMEOUT_INTERVAL = 5
     WAIT_INTERVAL = 15
 
-    def __init__(self, password = os.getenv('PALWORLD_ADMIN_PASSWORD', ''), host = '127.0.0.1', port = 25575):
+    def __init__(self, host = '127.0.0.1', port = 25575):
         self.host = host
         self.port = port
-        self.password = password
+        self.password = os.getenv('PALWORLD_ADMIN_PASSWORD', '')
 
     def command(self, input:str):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -91,26 +91,33 @@ class RCONClient:
                 try:
                     s.connect((self.host, self.port))
                 except socket.error as error:
-                    print('Socket Exception on Connection:{}').format(error)
+                    print('Socket Exception on Connection:')
+                    print(os.strerror(error.errno))
                     print('Retrying...')
                     retries += 1
                     time.sleep(RCONClient.WAIT_INTERVAL)
+                    continue
+
+                break
             
-            if retries > RCONClient.RETRY_CONNECT:
+            if retries >= RCONClient.RETRY_CONNECT:
                 raise Exception('Could not connect to Palworld Server')
+            else:
+                print('Successfully connected to RCON port')
             
             #Attempt RCON Authentication
             auth_request_packet = RCONPacket(RCONPacketType.SERVER_AUTH_REQUEST, self.password)
             auth_empty_packet = RCONPacket(getattr(auth_request_packet,'id')+1, RCONPacketType.SERVER_RESPONSE, '')
             s.send(auth_request_packet.pack())
-            s.send(auth_empty_packet.pack())
-
+            #s.send(auth_empty_packet.pack())
+            #print(getattr(auth_request_packet,'id'))
             auth_response = b''
             while True:
                 response = s.recv(RCONClient.MAX_PACKET_SIZE)
-                id = struct.unpack('<i', response[4:8])
-
-                if id == getattr(auth_empty_packet,'id'):
+                #print(response)
+                id = struct.unpack('<i', response[4:8])[0]
+                #print(id)
+                if id == getattr(auth_request_packet,'id'):
                     break
                 else:
                     auth_response += response
@@ -118,25 +125,28 @@ class RCONClient:
 
             if not auth_response_packet.isAuthenticated():
                 raise Exception('Failed to authenticate with Palworld Server. Please validate password.')
+            else:
+                print('Successfully authenticated')
 
             #Send command
             command_body = RCONClient.get_command_body(input)
             command_request_packet = RCONPacket(RCONPacketType.SERVER_COMMAND_REQUEST, command_body)
+            print(command_request_packet.pack())
+            print(getattr(command_request_packet, 'type'))
             command_empty_packet = RCONPacket(getattr(command_request_packet, 'id')+1,RCONPacketType.SERVER_RESPONSE, '')
-            s.send(command_request_packet)
-            s.send(command_empty_packet)
+            s.send(command_request_packet.pack())
+            #s.send(command_empty_packet.pack())
 
+            print(getattr(command_request_packet, 'id'))
+        
             command_response = b''
             while True:
                 response = s.recv(RCONClient.MAX_PACKET_SIZE)
-                id = struct.unpack('<i', response[4:8])
+                command_response += response
+                break
 
-                if id == getattr(command_empty_packet, 'id'):
-                    break
-                else:
-                    command_response += response
             command_response_packet = RCONPacket.unpack(command_response)
-            print(getattr(command_response_packet, 'body'))
+            return getattr(command_response_packet, 'body')
 
     def save(self):
         return self.command(RCONCommands.SAVE.name)
@@ -160,7 +170,7 @@ class RCONClient:
         return self.command(RCONCommands.BROADCAST.name + ' ' + message)
     
     def shutdown(self, time:int, message:str):
-        return self.command(RCONCommands.SHUTDOWN.name + ' ' + time + ' ' + message)
+        return self.command(RCONCommands.SHUTDOWN.name + ' ' + str(time) + ' ' + message)
 
     def get_command_body(input:str):
         input = input.lstrip()
@@ -183,4 +193,4 @@ class RCONClient:
         return body
 
     def fix_whitespace(input:str):
-        return input.replace(' ', u'\u00A0')
+        return input.replace(' ', u'\xa0')
